@@ -168,7 +168,7 @@
 */
 const express = require('express');
 const {getHospitals, getHospital, createHospital, updateHospital, deleteHospital} 
-        = require('../controllers/hospitals');
+        = require('../controllers/campgrounds');
 
 const appointmentRouter = require('./appointments');
 const router = express.Router();
