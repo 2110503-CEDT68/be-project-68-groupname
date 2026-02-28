@@ -1,0 +1,60 @@
+@startuml UseCaseDiagram
+
+skinparam actorBackgroundColor #E1F5FF
+skinparam usecaseBackgroundColor #FFF9C4
+skinparam packageBackgroundColor #FAFAFA
+skinparam shadowing false
+left to right direction
+
+actor "Guest User" as Guest
+actor "Authenticated User" as User
+actor "Admin" as Admin
+
+' Actor hierarchy
+User --|> Guest
+Admin --|> User
+
+package "Authentication" {
+    usecase "Register Account" as UC_Register
+    usecase "Login" as UC_Login
+    usecase "Logout" as UC_Logout
+    usecase "View My Profile" as UC_GetProfile
+}
+
+package "Books Management" {
+    usecase "View All Books" as UC_GetBooks
+    usecase "View Book Details" as UC_GetBook
+    usecase "Add New Book" as UC_AddBook
+    usecase "Update Book" as UC_UpdateBook
+    usecase "Delete Book" as UC_DeleteBook
+}
+
+package "Campgrounds Management" {
+    usecase "View All Campgrounds" as UC_GetCampgrounds
+    usecase "View Campground Details" as UC_GetCampground
+    usecase "Add New Campground" as UC_AddCampground
+    usecase "Update Campground" as UC_UpdateCampground
+    usecase "Delete Campground" as UC_DeleteCampground
+}
+
+' Guest permissions
+Guest --> UC_Register
+Guest --> UC_Login
+Guest --> UC_GetCampgrounds
+Guest --> UC_GetCampground
+
+' Authenticated User additional permissions
+User --> UC_Logout
+User --> UC_GetProfile
+User --> UC_GetBooks
+User --> UC_GetBook
+User --> UC_AddBook
+User --> UC_UpdateBook
+User --> UC_DeleteBook
+
+' Admin exclusive permissions
+Admin --> UC_AddCampground
+Admin --> UC_UpdateCampground
+Admin --> UC_DeleteCampground
+
+@enduml

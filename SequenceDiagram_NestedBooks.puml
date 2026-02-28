@@ -1,0 +1,78 @@
+@startuml SequenceDiagram_NestedBooks
+
+participant Client
+participant BooksController as "Books\nController"
+participant BookModel as "Book\nModel"
+participant CampgroundModel as "Campground\nModel"
+participant Database as "MongoDB"
+
+== Get Books by Campground ==
+Client -> BooksController: GET /api/v1/campgrounds/{campgroundId}/books\n(Authorization: Bearer token)
+BooksController -> BooksController: Verify user authentication\nExtract campgroundId from params
+alt User is Admin
+    BooksController -> BookModel: Find all books for campground
+else User is Regular User
+    BooksController -> BookModel: Find books by user ID AND campgroundId
+end
+BookModel -> Database: Query books collection with filter
+Database -> BookModel: Books found
+BookModel -> CampgroundModel: Populate campground info
+CampgroundModel -> Database: Query campground
+Database -> CampgroundModel: Campground found
+CampgroundModel -> BookModel: Campground populated
+BookModel -> BooksController: Books array
+BooksController -> Client: 200 OK\n{count, books data}
+
+== Add Book to Campground ==
+Client -> BooksController: POST /api/v1/campgrounds/{campgroundId}/books\n(title, author, data...)\n(Authorization: Bearer token)
+BooksController -> BooksController: Verify user authentication\nVerify user role (admin or user)
+BooksController -> CampgroundModel: Validate campground exists
+CampgroundModel -> Database: Query campground
+Database -> CampgroundModel: Campground found/not found
+alt Campground exists
+    CampgroundModel -> BooksController: Valid
+    BooksController -> BookModel: Create new book\n(set campgroundId, userId)
+    BookModel -> Database: Insert book document
+    Database -> BookModel: Book created
+    BookModel -> BooksController: Book object
+    BooksController -> Client: 201 Created\n{book data}
+else Campground not found
+    CampgroundModel -> BooksController: Not found
+    BooksController -> Client: 404 Not Found\n{Campground not found}
+end
+
+== Update Book in Campground ==
+Client -> BooksController: PUT /api/v1/campgrounds/{campgroundId}/books/{id}\n(updated data...)\n(Authorization: Bearer token)
+BooksController -> BooksController: Verify user authentication\nVerify authorization
+BooksController -> BookModel: Find book by ID
+BookModel -> Database: Query books collection
+Database -> BookModel: Book found
+BookModel -> BooksController: Book object
+alt Book campgroundId matches && user authorized
+    BooksController -> BookModel: Update book
+    BookModel -> Database: Update document
+    Database -> BookModel: Updated
+    BookModel -> BooksController: Updated book object
+    BooksController -> Client: 200 OK\n{updated book data}
+else Unauthorized or campground mismatch
+    BooksController -> Client: 403 Forbidden OR 400 Bad Request
+end
+
+== Delete Book from Campground ==
+Client -> BooksController: DELETE /api/v1/campgrounds/{campgroundId}/books/{id}\n(Authorization: Bearer token)
+BooksController -> BooksController: Verify user authentication\nVerify authorization
+BooksController -> BookModel: Find book by ID
+BookModel -> Database: Query books collection
+Database -> BookModel: Book found
+BookModel -> BooksController: Book object
+alt Book campgroundId matches && user authorized
+    BooksController -> BookModel: Delete book
+    BookModel -> Database: Delete document
+    Database -> BookModel: Deleted
+    BookModel -> BooksController: Success
+    BooksController -> Client: 200 OK\n{success: true}
+else Unauthorized or campground mismatch
+    BooksController -> Client: 403 Forbidden OR 400 Bad Request
+end
+
+@enduml

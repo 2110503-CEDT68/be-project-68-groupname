@@ -1,0 +1,70 @@
+@startuml BooksSequenceDiagram
+
+participant Client
+participant BooksController as "Books\nController"
+participant BookModel as "Book\nModel"
+participant CampgroundModel as "Campground\nModel"
+participant Database as "MongoDB"
+
+== Get All Books ==
+Client -> BooksController: GET /api/v1/books\n(Authorization: Bearer token)
+BooksController -> BooksController: Verify user authentication
+alt User is Admin
+    BooksController -> BookModel: Find all books
+else User is Regular User
+    BooksController -> BookModel: Find books by user ID
+end
+BookModel -> Database: Query books collection
+Database -> BookModel: Books found
+BookModel -> BooksController: Books array
+BooksController -> Client: 200 OK\n{count, books data}
+
+== Get Single Book ==
+Client -> BooksController: GET /api/v1/books/{id}\n(Authorization: Bearer token)
+BooksController -> BooksController: Verify user authentication
+BooksController -> BookModel: Find book by ID
+BookModel -> Database: Query books collection
+Database -> BookModel: Book found
+BookModel -> BooksController: Book object
+BooksController -> Client: 200 OK\n{book data}
+
+== Add New Book ==
+Client -> BooksController: POST /api/v1/books\n(title, author, campground, data...)\n(Authorization: Bearer token)
+BooksController -> BooksController: Verify user authentication\nVerify user is admin or user role
+BooksController -> BookModel: Create new book
+BookModel -> CampgroundModel: Validate campground exists
+CampgroundModel -> Database: Query campground
+Database -> CampgroundModel: Campground found
+CampgroundModel -> BookModel: Valid
+BookModel -> Database: Insert book document
+Database -> BookModel: Book created
+BookModel -> BooksController: Book object
+BooksController -> Client: 201 Created\n{book data}
+
+== Update Book ==
+Client -> BooksController: PUT /api/v1/books/{id}\n(updated data...)\n(Authorization: Bearer token)
+BooksController -> BooksController: Verify user authentication\nVerify authorization
+BooksController -> BookModel: Find book by ID
+BookModel -> Database: Query books collection
+Database -> BookModel: Book found
+BookModel -> BooksController: Book object
+BooksController -> BookModel: Update book
+BookModel -> Database: Update document
+Database -> BookModel: Updated
+BookModel -> BooksController: Updated book object
+BooksController -> Client: 200 OK\n{updated book data}
+
+== Delete Book ==
+Client -> BooksController: DELETE /api/v1/books/{id}\n(Authorization: Bearer token)
+BooksController -> BooksController: Verify user authentication\nVerify authorization
+BooksController -> BookModel: Find book by ID
+BookModel -> Database: Query books collection
+Database -> BookModel: Book found
+BookModel -> BooksController: Book object
+BooksController -> BookModel: Delete book
+BookModel -> Database: Delete document
+Database -> BookModel: Deleted
+BookModel -> BooksController: Success
+BooksController -> Client: 200 OK\n{success: true}
+
+@enduml

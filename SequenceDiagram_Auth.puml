@@ -1,0 +1,50 @@
+@startuml AuthSequenceDiagram
+
+participant Client
+participant AuthController as "Auth\nController"
+participant UserModel as "User\nModel"
+participant Database as "MongoDB"
+
+== User Registration ==
+Client -> AuthController: POST /auth/register\n(name, email, password, role)
+AuthController -> AuthController: Validate input data
+AuthController -> UserModel: Create new user
+UserModel -> Database: Insert user document
+Database -> UserModel: User created
+UserModel -> AuthController: User object
+AuthController -> AuthController: Generate JWT token
+AuthController -> Client: 200 OK\n{token, user data}
+
+== User Login ==
+Client -> AuthController: POST /auth/login\n(email, password)
+AuthController -> AuthController: Validate email & password provided
+AuthController -> UserModel: Find user by email
+UserModel -> Database: Query user collection
+Database -> UserModel: User found
+UserModel -> AuthController: User object with password
+AuthController -> AuthController: Compare password hash
+alt Password matches
+    AuthController -> AuthController: Generate JWT token
+    AuthController -> Client: 200 OK\n{token, user data}
+else Password invalid
+    AuthController -> Client: 400 Bad Request\n{Invalid credentials}
+end
+
+== Get User Profile ==
+Client -> AuthController: GET /auth/me\n(Authorization: Bearer token)
+AuthController -> AuthController: Verify & decode JWT token
+alt Token valid
+    AuthController -> UserModel: Find user by ID
+    UserModel -> Database: Query user collection
+    Database -> UserModel: User found
+    UserModel -> AuthController: User object
+    AuthController -> Client: 200 OK\n{user data}
+else Token invalid/expired
+    AuthController -> Client: 401 Unauthorized
+end
+
+== User Logout ==
+Client -> AuthController: GET /logout
+AuthController -> Client: 200 OK\n{success: true}
+
+@enduml
