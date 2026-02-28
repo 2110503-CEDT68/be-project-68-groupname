@@ -10,10 +10,6 @@ actor "Guest User" as Guest
 actor "Authenticated User" as User
 actor "Admin" as Admin
 
-' Actor hierarchy
-User --|> Guest
-Admin --|> User
-
 package "Authentication" {
     usecase "Register Account" as UC_Register
     usecase "Login" as UC_Login
@@ -24,9 +20,11 @@ package "Authentication" {
 package "Books Management" {
     usecase "View All Books" as UC_GetBooks
     usecase "View Book Details" as UC_GetBook
-    usecase "Add New Book" as UC_AddBook
-    usecase "Update Book" as UC_UpdateBook
-    usecase "Delete Book" as UC_DeleteBook
+    usecase "Create Book" as UC_AddBook
+    usecase "Update Own Book" as UC_UpdateOwn
+    usecase "Delete Own Book" as UC_DeleteOwn
+    usecase "Update Any Book" as UC_UpdateAny
+    usecase "Delete Any Book" as UC_DeleteAny
 }
 
 package "Campgrounds Management" {
@@ -37,22 +35,35 @@ package "Campgrounds Management" {
     usecase "Delete Campground" as UC_DeleteCampground
 }
 
-' Guest permissions
+' ===== Guest =====
 Guest --> UC_Register
 Guest --> UC_Login
+Guest --> UC_GetBooks
+Guest --> UC_GetBook
 Guest --> UC_GetCampgrounds
 Guest --> UC_GetCampground
 
-' Authenticated User additional permissions
+' ===== Authenticated User =====
 User --> UC_Logout
 User --> UC_GetProfile
 User --> UC_GetBooks
 User --> UC_GetBook
 User --> UC_AddBook
-User --> UC_UpdateBook
-User --> UC_DeleteBook
+User --> UC_UpdateOwn
+User --> UC_DeleteOwn
+User --> UC_GetCampgrounds
+User --> UC_GetCampground
 
-' Admin exclusive permissions
+' ===== Admin =====
+Admin --> UC_Logout
+Admin --> UC_GetProfile
+Admin --> UC_GetBooks
+Admin --> UC_GetBook
+Admin --> UC_AddBook
+Admin --> UC_UpdateAny
+Admin --> UC_DeleteAny
+Admin --> UC_GetCampgrounds
+Admin --> UC_GetCampground
 Admin --> UC_AddCampground
 Admin --> UC_UpdateCampground
 Admin --> UC_DeleteCampground
