@@ -1,5 +1,5 @@
 const Book = require('../models/Book');
-const CampGround = require('../models/CampGround');
+const Campground = require('../models/Campground');
 //@desc     Get all book
 //@route    GET /api/v1/books
 //@access   public
@@ -73,7 +73,7 @@ exports.getBook = async (req, res, next) => {
 exports.addBook = async (req, res, next) => {
     try{
         req.body.campground = req.params.campgroundId;
-        const campground = await CampGround.findById(req.params.campgroundId);
+        const campground = await Campground.findById(req.params.campgroundId);
         
         if(!campground){
             res.status(404).json({
