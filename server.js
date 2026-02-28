@@ -55,12 +55,12 @@ const swaggerOptions={
 const swaggerDocs=swaggerJsDoc(swaggerOptions);
 app.use('/api-docs',swaggerUI.serve, swaggerUI.setup(swaggerDocs));
 
-const hospital = require('./routes/hospitals');
-const appointments = require('./routes/appointments');
+const campground = require('./routes/campgrounds');
+const books = require('./routes/books');
 const auth = require('./routes/auth');
 
-app.use('/api/v1/hospitals', hospital);
-app.use('/api/v1/appointments', appointments);
+app.use('/api/v1/campgrounds', campground);
+app.use('/api/v1/books', books);
 app.use('/api/v1/auth', auth);
 
 const PORT = process.env.PORT || 5000;
