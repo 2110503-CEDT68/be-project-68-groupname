@@ -1,0 +1,118 @@
+@startuml ClassDiagram
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam classBackgroundColor #F0F0F0
+skinparam classBorderColor #333333
+skinparam arrowColor #333333
+
+' ==============================================================
+' APPLICATION
+' ==============================================================
+
+class "<<Application>>\nCampgroundService" as App
+
+' ==============================================================
+' USER / AUTH RESOURCE
+' ==============================================================
+
+package "Auth Resource" {
+
+    class "<<Resource>>\nAuth" as AuthSingle {
+        <<GET>> getMe(): User
+        <<POST>> logout(): void
+        <<POST>> register(): AuthResponse
+        <<POST>> login(): AuthResponse
+    }
+    
+
+    class "<<Representation>>\nUser" as UserRep {
+        _id: ObjectId
+        name: String
+        email: String
+        telephone: String
+        role: String
+        password: String (hashed)
+        resetPasswordToken: String
+        resetPasswordExpire: Date
+        createdAt: Date
+    }
+
+    class "<<Representation>>\nAuthResponse" as AuthRes {
+        success : Boolean
+        token : String
+    }
+
+    App --> AuthSingle : "/auth\n<<path>>"
+    AuthSingle --> AuthRes : <<use>>
+    AuthSingle --> UserRep : <<use>>
+}
+
+' ==============================================================
+' CAMPGROUND RESOURCE
+' ==============================================================
+
+package "Campground Resource" {
+
+    class "<<Resource>>\nCampgrounds" as CampCollection {
+        <<GET>> getCampgrounds(): Campground[]
+        <<POST>> createCampground(): Campground
+    }
+
+    class "<<Resource>>\nCampground" as CampSingle {
+        <<GET>> getCampground(id): Campground
+        <<PUT>> updateCampground(id): Campground
+        <<DELETE>> deleteCampground(id): void
+    }
+
+    class "<<Representation>>\nCampground" as CampgroundRep {
+        _id: ObjectId
+        name: String
+        address: String
+        district: String
+        province: String
+        postalcode: String
+        tel: String
+        region: String
+    }
+
+    App --> CampCollection : /campgrounds\n<<path>>
+    CampCollection --> CampSingle : /{campgroundId}\n<<path>>
+    CampCollection --> CampgroundRep : <<use>>
+    CampSingle --> CampgroundRep : <<use>>
+}
+
+' ==============================================================
+' BOOKING RESOURCE
+' ==============================================================
+
+package "Booking Resource" {
+
+    class "<<Resource>>\nBooks" as BookCollection {
+        <<GET>> getBooks(): Book[]
+        <<POST>> addBook(): Book
+    }
+
+    class "<<Resource>>\nBook" as BookSingle {
+        <<GET>> getBook(id): Book
+        <<PUT>> updateBook(id): Book
+        <<DELETE>> deleteBook(id): void
+    }
+
+    class "<<Representation>>\nBook" as BookRep {
+        _id: ObjectId
+        startDate: Date
+        endDate: Date
+        user: Reference<User>
+        campground: Reference<Campground>
+        createdAt: Date
+    }
+
+    App --> BookCollection : /books\n<<path>>
+    BookCollection --> BookSingle : /{bookId}\n<<path>>
+    BookCollection --> BookRep : <<use>>
+    BookSingle --> BookRep : <<use>>
+}
+
+CampCollection --> BookSingle : /{campgroundId}/books
+
+@enduml
