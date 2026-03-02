@@ -1,0 +1,82 @@
+@startuml CampgroundsSequenceDiagram
+
+participant Client
+participant CampgroundController as "Campgrounds\nController"
+participant CampgroundModel as "Campground\nModel"
+participant BookModel as "Book\nModel"
+participant Database as "MongoDB"
+
+== Get All Campgrounds ==
+Client -> CampgroundController: GET /api/v1/campgrounds\n(optional: filters, sort, pagination)
+CampgroundController -> CampgroundController: Parse query filters\nValidate pagination parameters
+CampgroundController -> CampgroundModel: Find campgrounds with filters
+CampgroundModel -> CampgroundModel: Apply query operators\nSort and paginate
+CampgroundModel -> Database: Query campgrounds collection
+Database -> CampgroundModel: Campgrounds found
+CampgroundModel -> BookModel: Populate associated books
+BookModel -> Database: Query books for campgrounds
+Database -> BookModel: Books found
+BookModel -> CampgroundModel: Books populated
+CampgroundModel -> CampgroundController: Campgrounds with books
+CampgroundController -> Client: 200 OK\n{count, pagination, data}
+
+== Get Single Campground ==
+Client -> CampgroundController: GET /api/v1/campgrounds/{id}
+CampgroundController -> CampgroundModel: Find campground by ID
+CampgroundModel -> Database: Query campground
+Database -> CampgroundModel: Campground found
+CampgroundModel -> CampgroundController: Campground object
+CampgroundController -> Client: 200 OK\n{campground data}
+
+== Create Campground ==
+Client -> CampgroundController: POST /api/v1/campgrounds\n(name, address, province, tel, data...)\n(Authorization: Bearer token)
+CampgroundController -> CampgroundController: Verify user authentication\nVerify user role is admin
+alt User is Admin
+    CampgroundController -> CampgroundModel: Create new campground
+    CampgroundModel -> Database: Insert campground document
+    Database -> CampgroundModel: Campground created
+    CampgroundModel -> CampgroundController: Campground object
+    CampgroundController -> Client: 201 Created\n{campground data}
+else User is not Admin
+    CampgroundController -> Client: 403 Forbidden\n{Unauthorized}
+end
+
+== Update Campground ==
+Client -> CampgroundController: PUT /api/v1/campgrounds/{id}\n(updated data...)\n(Authorization: Bearer token)
+CampgroundController -> CampgroundController: Verify user authentication\nVerify user role is admin
+alt User is Admin
+    CampgroundController -> CampgroundModel: Find campground by ID
+    CampgroundModel -> Database: Query campground
+    Database -> CampgroundModel: Campground found
+    CampgroundModel -> CampgroundController: Campground object
+    CampgroundController -> CampgroundModel: Update campground
+    CampgroundModel -> Database: Update document
+    Database -> CampgroundModel: Updated
+    CampgroundModel -> CampgroundController: Updated campground object
+    CampgroundController -> Client: 200 OK\n{updated campground data}
+else User is not Admin
+    CampgroundController -> Client: 403 Forbidden\n{Unauthorized}
+end
+
+== Delete Campground ==
+Client -> CampgroundController: DELETE /api/v1/campgrounds/{id}\n(Authorization: Bearer token)
+CampgroundController -> CampgroundController: Verify user authentication\nVerify user role is admin
+alt User is Admin
+    CampgroundController -> CampgroundModel: Find campground by ID
+    CampgroundModel -> Database: Query campground
+    Database -> CampgroundModel: Campground found
+    CampgroundModel -> BookModel: Delete associated books
+    BookModel -> Database: Delete books
+    Database -> BookModel: Deleted
+    BookModel -> CampgroundModel: Success
+    CampgroundModel -> CampgroundController: Ready to delete
+    CampgroundController -> CampgroundModel: Delete campground
+    CampgroundModel -> Database: Delete document
+    Database -> CampgroundModel: Deleted
+    CampgroundModel -> CampgroundController: Success
+    CampgroundController -> Client: 200 OK\n{success: true}
+else User is not Admin
+    CampgroundController -> Client: 403 Forbidden\n{Unauthorized}
+end
+
+@enduml

@@ -1,0 +1,26 @@
+@startuml SequenceDiagram_NestedBooks
+
+participant Client
+participant BooksController as "Books\nController"
+participant BookModel as "Book\nModel"
+participant CampgroundModel as "Campground\nModel"
+participant Database as "MongoDB"
+
+== Get Books by Campground ==
+Client -> BooksController: GET /api/v1/campgrounds/{campgroundId}/books\n(Authorization: Bearer token)
+BooksController -> BooksController: Verify user authentication\nExtract campgroundId from params
+alt User is Admin
+    BooksController -> BookModel: Find all books for campground
+else User is Regular User
+    BooksController -> BookModel: Find books by user ID AND campgroundId
+end
+BookModel -> Database: Query books collection with filter
+Database -> BookModel: Books found
+BookModel -> CampgroundModel: Populate campground info
+CampgroundModel -> Database: Query campground
+Database -> CampgroundModel: Campground found
+CampgroundModel -> BookModel: Campground populated
+BookModel -> BooksController: Books array
+BooksController -> Client: 200 OK\n{count, books data}
+
+@enduml

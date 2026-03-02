@@ -166,6 +166,7 @@
 *       404:
 *         description: The campground was not found
 */
+
 const express = require('express');
 const {getCampgrounds, getCampground, createCampground, updateCampground, deleteCampground} 
         = require('../controllers/campgrounds');
