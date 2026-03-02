@@ -29,31 +29,110 @@ BookModel -> BooksController: Book object
 BooksController -> Client: 200 OK\n{book data}
 
 == Add New Book ==
-Client -> BooksController: POST /api/v1/books\n(title, author, campground, data...)\n(Authorization: Bearer token)
-BooksController -> BooksController: Verify user authentication\nVerify user is admin or user role
-BooksController -> BookModel: Create new book
-BookModel -> CampgroundModel: Validate campground exists
+
+Client -> BooksController: POST /api/v1/campgrounds/{campgroundId}/books\n(startDate, endDate...)\n(Authorization)
+
+' --- authentication ---
+BooksController -> BooksController: Verify authentication
+alt Invalid token
+    BooksController -> Client: 401 Unauthorized
+end
+
+' --- request validation ---
+BooksController -> BooksController: Validate request body
+alt Invalid data
+    BooksController -> Client: 400 Bad Request
+end
+
+' --- campground validation ---
+BooksController -> CampgroundModel: findById(campgroundId)
 CampgroundModel -> Database: Query campground
-Database -> CampgroundModel: Campground found
-CampgroundModel -> BookModel: Valid
-BookModel -> Database: Insert book document
+Database -> CampgroundModel: Result
+CampgroundModel -> BooksController: Campground object
+
+alt Campground not found
+    BooksController -> Client: 404 Campground not found
+end
+
+' --- business rules for regular users ---
+alt User is Regular User
+
+    BooksController -> BooksController: Check booking limit
+    alt Limit exceeded
+        BooksController -> Client: 400 Booking limit exceeded
+    end
+
+    BooksController -> BookModel: findOverlappingBookings(user, newDates)
+    BookModel -> Database: Query books collection
+    Database -> BookModel: overlapped bookings
+    BookModel -> BooksController: overlappedBookings[]
+
+    alt Overlap exists
+        BooksController -> Client: 400 Overlapped booking
+    end
+end
+
+' --- create booking ---
+BooksController -> BookModel: create(bookData)
+BookModel -> Database: Insert document
 Database -> BookModel: Book created
 BookModel -> BooksController: Book object
-BooksController -> Client: 201 Created\n{book data}
+
+BooksController -> Client: 201 Created\n{book}
 
 == Update Book ==
-Client -> BooksController: PUT /api/v1/books/{id}\n(updated data...)\n(Authorization: Bearer token)
-BooksController -> BooksController: Verify user authentication\nVerify authorization
-BooksController -> BookModel: Find book by ID
+
+Client -> BooksController: PUT /api/v1/campgrounds/{campgroundId}/books/{bookId}\n(updated data...)\n(Authorization)
+
+BooksController -> BooksController: Verify authentication
+
+' --- find existing booking ---
+BooksController -> BookModel: findById(bookId)
 BookModel -> Database: Query books collection
 Database -> BookModel: Book found
 BookModel -> BooksController: Book object
-BooksController -> BookModel: Update book
+
+alt Book not found
+    BooksController -> Client: 404 Book not found
+end
+
+' --- authorization check ---
+BooksController -> BooksController: Verify user is owner OR admin
+alt Unauthorized
+    BooksController -> Client: 403 Not authorized
+end
+
+' --- validate campground if changed ---
+alt campgroundId changed
+    BooksController -> CampgroundModel: findById(campgroundId)
+    CampgroundModel -> Database: Query campground
+    Database -> CampgroundModel: Campground result
+    CampgroundModel -> BooksController: Campground object
+
+    alt Campground not found
+        BooksController -> Client: 404 Campground not found
+    end
+end
+
+' --- booking rule validation (date changes) ---
+alt User is Regular User AND dates updated
+    BooksController -> BookModel: findOverlappingBookings(user, newDates)
+    BookModel -> Database: Query books collection
+    Database -> BookModel: overlapped bookings
+    BookModel -> BooksController: overlappedBookings[]
+
+    alt Overlap exists
+        BooksController -> Client: 400 Overlapped booking
+    end
+end
+
+' --- perform update ---
+BooksController -> BookModel: update(bookId, updateData)
 BookModel -> Database: Update document
 Database -> BookModel: Updated
 BookModel -> BooksController: Updated book object
-BooksController -> Client: 200 OK\n{updated book data}
 
+BooksController -> Client: 200 OK\n{updated book data}
 == Delete Book ==
 Client -> BooksController: DELETE /api/v1/books/{id}\n(Authorization: Bearer token)
 BooksController -> BooksController: Verify user authentication\nVerify authorization
