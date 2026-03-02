@@ -30,7 +30,7 @@ BooksController -> Client: 200 OK\n{book data}
 
 == Add New Book ==
 
-Client -> BooksController: POST /api/v1/campgrounds/{campgroundId}/books\n(startDate, endDate...)\n(Authorization)
+Client -> BooksController: POST /api/v1/books\n(startDate, endDate...)\n(Authorization)
 
 ' --- authentication ---
 BooksController -> BooksController: Verify authentication
@@ -82,7 +82,7 @@ BooksController -> Client: 201 Created\n{book}
 
 == Update Book ==
 
-Client -> BooksController: PUT /api/v1/campgrounds/{campgroundId}/books/{bookId}\n(updated data...)\n(Authorization)
+Client -> BooksController: PUT /api/v1/books/{bookId}\n(updated data...)\n(Authorization)
 
 BooksController -> BooksController: Verify authentication
 

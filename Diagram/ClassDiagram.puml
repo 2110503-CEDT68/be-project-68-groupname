@@ -52,7 +52,11 @@ package "Auth Resource" {
 ' ==============================================================
 
 package "Campground Resource" {
+    class "<<Resource>>\nBooks" as CampBook {
+        <<GET>> getBooksByCampground(): Book[]
+    }
 
+        
     class "<<Resource>>\nCampgrounds" as CampCollection {
         <<GET>> getCampgrounds(): Campground[]
         <<POST>> createCampground(): Campground
@@ -74,10 +78,10 @@ package "Campground Resource" {
         tel: String
         region: String
     }
-
     App --> CampCollection : /campgrounds\n<<path>>
     CampCollection --> CampSingle : /{campgroundId}\n<<path>>
     CampCollection --> CampgroundRep : <<use>>
+    CampSingle --> CampBook : /books\n<<path>>
     CampSingle --> CampgroundRep : <<use>>
 }
 
@@ -113,6 +117,6 @@ package "Booking Resource" {
     BookSingle --> BookRep : <<use>>
 }
 
-CampCollection --> BookSingle : /{campgroundId}/books
+CampBook --> BookRep : <<use>>
 
 @enduml
