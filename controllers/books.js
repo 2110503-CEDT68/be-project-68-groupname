@@ -230,7 +230,7 @@ exports.deleteBook = async (req, res, next) => {
                 message: `User ${req.user.id} is not authorized to delete this book`
             });
         }
-        await Book.deleteOne();
+        await book.deleteOne();
 
         res.status(200).json({
             success: true,
