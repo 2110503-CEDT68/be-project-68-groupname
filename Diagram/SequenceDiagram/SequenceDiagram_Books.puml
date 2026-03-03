@@ -82,57 +82,57 @@ BooksController -> Client: 201 Created\n{book}
 
 == Update Book ==
 
-Client -> BooksController: PUT /api/v1/books/{bookId}\n(updated data...)\n(Authorization)
+Client -> BooksController: PUT /api/v1/books/{id}\n(updated data)\n(Authorization)
 
 BooksController -> BooksController: Verify authentication
 
 ' --- find existing booking ---
-BooksController -> BookModel: findById(bookId)
+BooksController -> BookModel: findById(id)
 BookModel -> Database: Query books collection
-Database -> BookModel: Book found
+Database -> BookModel: Book / null
 BookModel -> BooksController: Book object
 
 alt Book not found
-    BooksController -> Client: 404 Book not found
+    BooksController -> Client: 404 No book with id
 end
 
 ' --- authorization check ---
-BooksController -> BooksController: Verify user is owner OR admin
+BooksController -> BooksController: Check owner OR admin
 alt Unauthorized
     BooksController -> Client: 403 Not authorized
 end
 
-' --- validate campground if changed ---
-alt campgroundId changed
-    BooksController -> CampgroundModel: findById(campgroundId)
-    CampgroundModel -> Database: Query campground
-    Database -> CampgroundModel: Campground result
-    CampgroundModel -> BooksController: Campground object
+' --- compute booking dates ---
+BooksController -> BooksController: start = req.body.startDate || book.startDate
+BooksController -> BooksController: end = req.body.endDate || book.endDate
+BooksController -> BooksController: nights = ceil((end - start)/1day)
 
-    alt Campground not found
-        BooksController -> Client: 404 Campground not found
-    end
+alt nights <= 0
+    BooksController -> Client: 400 End date must be after start date
 end
 
-' --- booking rule validation (date changes) ---
-alt User is Regular User AND dates updated
-    BooksController -> BookModel: findOverlappingBookings(user, newDates)
-    BookModel -> Database: Query books collection
-    Database -> BookModel: overlapped bookings
-    BookModel -> BooksController: overlappedBookings[]
+alt nights > 3 AND role != admin
+    BooksController -> Client: 400 Booking cannot exceed 3 nights
+end
 
-    alt Overlap exists
-        BooksController -> Client: 400 Overlapped booking
-    end
+' --- overlap check ---
+BooksController -> BookModel: findOne({_id != id,\nuser, campground,\nstartDate <= end,\nendDate >= start})
+BookModel -> Database: Query books collection
+Database -> BookModel: Overlap / null
+BookModel -> BooksController: overlap result
+
+alt Overlap exists AND role != admin
+    BooksController -> Client: 400 Updated dates overlap
 end
 
 ' --- perform update ---
-BooksController -> BookModel: update(bookId, updateData)
+BooksController -> BookModel: findByIdAndUpdate(id, req.body,\n{new: true, runValidators: true})
 BookModel -> Database: Update document
-Database -> BookModel: Updated
+Database -> BookModel: Updated book
 BookModel -> BooksController: Updated book object
 
-BooksController -> Client: 200 OK\n{updated book data}
+BooksController -> Client: 200 OK\n{success: true, data: book}
+
 == Delete Book ==
 Client -> BooksController: DELETE /api/v1/books/{id}\n(Authorization: Bearer token)
 BooksController -> BooksController: Verify user authentication\nVerify authorization
