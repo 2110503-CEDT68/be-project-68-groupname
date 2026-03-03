@@ -78,6 +78,7 @@ package "Campground Resource" {
         tel: String
         region: String
     }
+    
     App --> CampCollection : /campgrounds\n<<path>>
     CampCollection --> CampSingle : /{campgroundId}\n<<path>>
     CampCollection --> CampgroundRep : <<use>>
